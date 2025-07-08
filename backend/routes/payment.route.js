@@ -3,6 +3,7 @@ import { config } from "dotenv";
 config();
 const router = Router();
 import Stripe from "stripe";
+import sendMail from "../utils/sendMail";
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 console.log(process.env.STRIPE_SECRET_KEY);
 
@@ -69,8 +70,20 @@ router.post("/transaction-suucess", async (req, res) => {
       currency: session.currency,
       payment_status: session.payment_status,
     });
-
     // we can save this to a DB instead of console.log
+
+    if (session.customer_details?.email) {
+      await sendMail(
+        session.customer_details.email,
+        "Stripe Payment Successful",
+        `<div>
+          <p>"Thank you for being a valuable cutomer at our platform"</p>
+          <span>Total Amount: ${session.amount_total}</span>
+          <span>Currency: ${session.currency}</span>
+          <span>Payment Status: ${session.payment_status}</span>
+        </div>`
+      );
+    }
 
     return res.status(200).json({ success: true });
   } catch (err) {
